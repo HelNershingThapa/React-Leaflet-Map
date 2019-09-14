@@ -6,28 +6,50 @@ import _ from 'lodash'
 import markerClusterGroup from 'leaflet.markercluster'
 import '../assets/cluster.css'
 
-
-let geoData = osmtogeojson(jsonData)
-class Map extends React.Component {
-
-  const config = {
-    params: {
+const config = {
+    mapParams: {
       center: [27.7172,  85.3240],
       minZoom: 11,
       maxZoom: 17,
       zoom: 12,
-      layers: [osmMap] // only add one!
-    }
-  }
+       // only add one!
+    },
+    tileLayer : {
+      osmLink: '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      thunLink : '<a href="http://thunderforest.com/">Thunderforest</a>',            
+      osmUrl : 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      osmAttrib : '&copy; ' + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' + ' Contributors',
+      landUrl : 'http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
+      thunAttrib : '&copy; '+ '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'+' Contributors & '+'<a href="http://thunderforest.com/">Thunderforest</a>',
+  } ,
 
+}
+
+const iconConfig = {
+  iconUrl: 'https://cdn1.iconfinder.com/data/icons/leto-blue-map-pins/64/pin_marker_location-24-512.png',
+    iconSize: [45, 50],
+    iconAnchor: [16, 37],
+    popupAnchor: [0, -28]
+}
+
+  
+
+let geoData = osmtogeojson(jsonData)
+class Map extends React.Component {
   constructor(){
     super()
     this.state = {
       map: null,
-      tileLayer: null,
+      osmMap: null,
+      landMap: null,
       geojsonLayer: null,
-      geoData: null
+      geoData: null,
+      myIcon: null
     }
+
+    this.onEachFeature = this.onEachFeature.bind(this)
+    this.pointToLayer = this.pointToLayer.bind(this)
+    this.filterFeatures = this.filterFeatures.bind(this)
   }
 
   getData(){
@@ -37,40 +59,47 @@ class Map extends React.Component {
     })
   }
 
-  componentDidMount() {
+  async componentDidMount() {  
+  
     this.getData();
-        var osmLink = '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            thunLink = '<a href="http://thunderforest.com/">Thunderforest</a>';
-        
-        var osmUrl = 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-            osmAttrib = '&copy; ' + osmLink + ' Contributors',
-            landUrl = 'http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-            thunAttrib = '&copy; '+osmLink+' Contributors & '+thunLink;
-
-        var osmMap = L.tileLayer(osmUrl, {attribution: osmAttrib}),
-            landMap = L.tileLayer(landUrl, {attribution: thunAttrib});
-
-        var map = L.map('map', config.mapParams);
-
-    var baseLayers = {
+    await this.init();
+ 
+  let myIcon = L.icon(iconConfig);
+  this.setState({myIcon})
+  //GeoJSON layer
+    let geojsonLayer = L.geoJson(geoData, {
+      pointToLayer: this.pointToLayer,
+      filter: this.filterFeatures,
+      onEachFeature: this.onEachFeature
+    });
+    // Marker Clustering
+    let markers = L.markerClusterGroup({
+         disableClusteringAtZoom: 18,
+         maxClusterRadius: 80,
+         spiderfyDistanceMultiplier: 1,
+     });
+     markers.addLayer(geojsonLayer);
+     this.state.map.addLayer(markers);
+}
+  async init(){
+    if (this.state.map) return;
+    let osmMap = L.tileLayer(config.tileLayer.osmUrl, {attribution: config.tileLayer.osmAttrib}),
+          landMap = L.tileLayer(config.tileLayer.landUrl, {attribution: config.tileLayer.thunAttrib});
+  
+    let baseLayers = {
       "Carto Dark": osmMap,
       "Landscape": landMap
     };
-
+    let map = await L.map('map', {...config.mapParams, layers: [osmMap]});
     L.control.layers(baseLayers).addTo(map);
 
-  var myIcon = L.icon({
-  iconUrl: 'https://cdn1.iconfinder.com/data/icons/leto-blue-map-pins/64/pin_marker_location-24-512.png',
-  iconSize: [45, 50],
-  iconAnchor: [16, 37],
-  popupAnchor: [0, -28]
-    });
-  //GeoJSON layer
-    let geojsonLayer = L.geoJson(geoData, {
-      pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: myIcon});
-      },
-      filter: (feature, _layer) => {
+  this.setState({map: map, osmMap, landMap})
+  }
+
+pointToLayer (feature, latlng) {
+            return L.marker(latlng, {icon: this.state.myIcon});
+      }
+filterFeatures(feature, _layer) {
         let isPolygon =
           feature.geometry &&
           feature.geometry.type &&
@@ -83,8 +112,9 @@ class Map extends React.Component {
           feature.geometry.coordinates = [polygonCenter.lat, polygonCenter.lng];
         }
         return true;
-      },
-      onEachFeature: (feature, layer) => {
+      }
+
+onEachFeature(feature, layer){
         let popupContent = "";
         let keys = Object.keys(feature.properties);
         keys.forEach(function(key) {
@@ -92,20 +122,7 @@ class Map extends React.Component {
         });
         popupContent = popupContent + "</dl>";
         layer.bindPopup(popupContent);
-      }
-    });
-
-    // Marker Clustering
-    var markers = L.markerClusterGroup({
-         disableClusteringAtZoom: 18,
-         maxClusterRadius: 80,
-         spiderfyDistanceMultiplier: 1,
-     });
-     markers.addLayer(resultLayer);
-     map.addLayer(markers);
-
-}
-
+      }      
   render() {
     return(
            <div id="map"></div>
