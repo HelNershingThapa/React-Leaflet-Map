@@ -8,126 +8,142 @@ import '../assets/cluster.css'
 
 const config = {
     mapParams: {
-      center: [27.7172,  85.3240],
-      minZoom: 11,
-      maxZoom: 17,
-      zoom: 12,
-       // only add one!
+        center: [27.7172, 85.3240],
+        minZoom: 11,
+        maxZoom: 17,
+        zoom: 12,        
     },
-    tileLayer : {
-      osmLink: '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      thunLink : '<a href="http://thunderforest.com/">Thunderforest</a>',            
-      osmUrl : 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-      osmAttrib : '&copy; ' + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' + ' Contributors',
-      landUrl : 'http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-      thunAttrib : '&copy; '+ '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'+' Contributors & '+'<a href="http://thunderforest.com/">Thunderforest</a>',
-  } ,
-
+    tileLayer: {
+        osmLink: '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        thunLink: '<a href="http://thunderforest.com/">Thunderforest</a>',
+        osmUrl: 'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        osmAttrib: '&copy; ' + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' + ' Contributors',
+        landUrl: 'http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
+        thunAttrib: '&copy; ' + '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' + ' Contributors & ' + '<a href="http://thunderforest.com/">Thunderforest</a>',
+    },
 }
 
 const iconConfig = {
-  iconUrl: 'https://cdn1.iconfinder.com/data/icons/leto-blue-map-pins/64/pin_marker_location-24-512.png',
+    iconUrl: 'https://cdn1.iconfinder.com/data/icons/leto-blue-map-pins/64/pin_marker_location-24-512.png',
     iconSize: [45, 50],
     iconAnchor: [16, 37],
     popupAnchor: [0, -28]
 }
 
-  
-
 let geoData = osmtogeojson(jsonData)
 class Map extends React.Component {
-  constructor(){
-    super()
-    this.state = {
-      map: null,
-      osmMap: null,
-      landMap: null,
-      geojsonLayer: null,
-      geoData: null,
-      myIcon: null
+    constructor() {
+        super()
+        this.state = {
+            map: null,
+            osmMap: null,
+            landMap: null,
+            geojsonLayer: null,
+            geoData: null,
+            myIcon: null,
+            selectedFilter: 'private',
+            schoolFilters: { government: false, private: true },
+        }
+
+        this.onEachFeature = this.onEachFeature.bind(this)
+        this.pointToLayer = this.pointToLayer.bind(this)
+        this.filterFeatures = this.filterFeatures.bind(this)
     }
 
-    this.onEachFeature = this.onEachFeature.bind(this)
-    this.pointToLayer = this.pointToLayer.bind(this)
-    this.filterFeatures = this.filterFeatures.bind(this)
-  }
+    getData() {
+        this.setState({
+            geoData
 
-  getData(){
-    this.setState({
-      geoData
+        })
+    }
 
-    })
-  }
+    async componentDidMount() {
+        this.getData();
+        await this.init();
 
-  async componentDidMount() {  
-  
-    this.getData();
-    await this.init();
- 
-  let myIcon = L.icon(iconConfig);
-  this.setState({myIcon})
-  //GeoJSON layer
-    let geojsonLayer = L.geoJson(geoData, {
-      pointToLayer: this.pointToLayer,
-      filter: this.filterFeatures,
-      onEachFeature: this.onEachFeature
-    });
-    // Marker Clustering
-    let markers = L.markerClusterGroup({
-         disableClusteringAtZoom: 18,
-         maxClusterRadius: 80,
-         spiderfyDistanceMultiplier: 1,
-     });
-     markers.addLayer(geojsonLayer);
-     this.state.map.addLayer(markers);
-}
-  async init(){
-    if (this.state.map) return;
-    let osmMap = L.tileLayer(config.tileLayer.osmUrl, {attribution: config.tileLayer.osmAttrib}),
-          landMap = L.tileLayer(config.tileLayer.landUrl, {attribution: config.tileLayer.thunAttrib});
-  
-    let baseLayers = {
-      "Carto Dark": osmMap,
-      "Landscape": landMap
-    };
-    let map = await L.map('map', {...config.mapParams, layers: [osmMap]});
-    L.control.layers(baseLayers).addTo(map);
+        let myIcon = L.icon(iconConfig);
+        this.setState({ myIcon })
+        //GeoJSON layer
+        let geojsonLayer = L.geoJson(geoData, {
+            pointToLayer: this.pointToLayer,
+            filter: this.filterFeatures,
+            onEachFeature: this.onEachFeature
+        });
+        // Marker Clustering
+        let markers = L.markerClusterGroup({
+            disableClusteringAtZoom: 18,
+            maxClusterRadius: 80,
+            spiderfyDistanceMultiplier: 1,
+        });
+        markers.addLayer(geojsonLayer);
+        this.state.map.addLayer(markers);
+    }
+    async init() {
+        if (this.state.map) return;
+        let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
+            landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
 
-  this.setState({map: map, osmMap, landMap})
-  }
+        let baseLayers = {
+            "Carto Dark": osmMap,
+            "Landscape": landMap
+        };
+        let map = await L.map('map', { ...config.mapParams, layers: [osmMap] });
+        L.control.layers(baseLayers).addTo(map);
 
-pointToLayer (feature, latlng) {
-            return L.marker(latlng, {icon: this.state.myIcon});
-      }
-filterFeatures(feature, _layer) {
+        this.setState({ map, osmMap, landMap })
+    }
+
+    pointToLayer(feature, latlng) {
+        return L.marker(latlng, { icon: this.state.myIcon });
+    }
+    filterFeatures(feature, _layer) {
         let isPolygon =
-          feature.geometry &&
-          feature.geometry.type &&
-          feature.geometry.type === "Polygon";
+            feature.geometry &&
+            feature.geometry.type &&
+            feature.geometry.type === "Polygon";
         if (isPolygon) {
-          feature.geometry.type = "Point";
-          let polygonCenter = L.latLngBounds(
-            feature.geometry.coordinates[0]
-          ).getCenter();
-          feature.geometry.coordinates = [polygonCenter.lat, polygonCenter.lng];
+            feature.geometry.type = "Point";
+            let polygonCenter = L.latLngBounds(
+                feature.geometry.coordinates[0]
+            ).getCenter();
+            feature.geometry.coordinates = [polygonCenter.lat, polygonCenter.lng];
         }
-        return true;
-      }
+        if (this.state.schoolFilters[this.state.selectedFilter]) {
+            if (feature.properties["operator:type"] === this.state.selectedFilter) {
+                return true;
+            }
+        } else return true
+    }
 
-onEachFeature(feature, layer){
+    onEachFeature(feature, layer) {
         let popupContent = "";
         let keys = Object.keys(feature.properties);
         keys.forEach(function(key) {
-          popupContent = `${popupContent}<dt>${_.capitalize(key)}:</dt><dd>${_.capitalize(feature.properties[key])}</dd>`;
+            popupContent = `${popupContent}<dt>${_.capitalize(key)}:</dt><dd>${_.capitalize(feature.properties[key])}</dd>`;
         });
         popupContent = popupContent + "</dl>";
         layer.bindPopup(popupContent);
-      }      
-  render() {
-    return(
-           <div id="map"></div>
-    )
-  }
+    }
+    render() {
+      const style = {
+        position: 'absolute',
+        zIndex: 9999,
+        height: 100,
+        width: 60,
+        background: 'black',
+        color: 'white',
+        left: '50%'
+      }
+        return (
+            <div id="map">
+              <div style={style}>
+                <input type="radio" name="school" value="private" />Private
+                <input type="radio" name="school" value="government" />Government
+                <input type="radio" name="school" value="all" /> All
+              </div>
+            </div>
+        )
+    }
 }
 
 
