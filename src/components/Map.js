@@ -41,19 +41,19 @@ class Map extends React.Component {
             geojsonLayer: null,
             geoData: null,
             myIcon: null,
-            selectedFilter: 'private',
-            schoolFilters: { government: false, private: true },
+            selectedFilter: null,
+            schoolFilters: { government: false, private: false },
         }
 
         this.onEachFeature = this.onEachFeature.bind(this)
         this.pointToLayer = this.pointToLayer.bind(this)
         this.filterFeatures = this.filterFeatures.bind(this)
+        this.onOperatorChange = this.onOperatorChange.bind(this)
     }
 
     getData() {
         this.setState({
             geoData
-
         })
     }
 
@@ -78,7 +78,8 @@ class Map extends React.Component {
         markers.addLayer(geojsonLayer);
         this.state.map.addLayer(markers);
     }
-    async init() {
+    
+     init() {
         if (this.state.map) return;
         let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
             landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
@@ -87,15 +88,16 @@ class Map extends React.Component {
             "Carto Dark": osmMap,
             "Landscape": landMap
         };
-        let map = await L.map('map', { ...config.mapParams, layers: [osmMap] });
+        let map =  L.map('map', { ...config.mapParams, layers: [osmMap] });
         L.control.layers(baseLayers).addTo(map);
 
-        this.setState({ map, osmMap, landMap })
+        this.setState({ map})
     }
 
     pointToLayer(feature, latlng) {
         return L.marker(latlng, { icon: this.state.myIcon });
     }
+    
     filterFeatures(feature, _layer) {
         let isPolygon =
             feature.geometry &&
@@ -110,7 +112,9 @@ class Map extends React.Component {
         }
         if (this.state.schoolFilters[this.state.selectedFilter]) {
             if (feature.properties["operator:type"] === this.state.selectedFilter) {
+                debugger
                 return true;
+
             }
         } else return true
     }
@@ -124,6 +128,14 @@ class Map extends React.Component {
         popupContent = popupContent + "</dl>";
         layer.bindPopup(popupContent);
     }
+
+    onOperatorChange(event){        
+        console.log(event.target.value)
+        this.setState({
+            selectedFilter: event.target.value
+        })        
+    }
+
     render() {
       const style = {
         position: 'absolute',
@@ -137,9 +149,9 @@ class Map extends React.Component {
         return (
             <div id="map">
               <div style={style}>
-                <input type="radio" name="school" value="private" />Private
-                <input type="radio" name="school" value="government" />Government
-                <input type="radio" name="school" value="all" /> All
+                <input type="radio" name="school" value="private" onChange={this.onOperatorChange} />Private
+                <input type="radio" name="school" value="government" onChange={this.onOperatorChange} />Government
+                <input type="radio" name="school" value="all" onChange={this.onOperatorChange} /> All
               </div>
             </div>
         )
