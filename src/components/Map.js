@@ -39,8 +39,7 @@ class Map extends React.Component {
             osmMap: null,
             landMap: null,
             geojsonLayer: null,
-            geoData: null,
-            myIcon: null,
+            geoData: null,            
             selectedFilter: null,
             schoolFilters: { government: false, private: false },
         }
@@ -49,21 +48,24 @@ class Map extends React.Component {
         this.pointToLayer = this.pointToLayer.bind(this)
         this.filterFeatures = this.filterFeatures.bind(this)
         this.onOperatorChange = this.onOperatorChange.bind(this)
+        this.addGeoJSONLayer = this.addGeoJSONLayer.bind(this)
     }
 
     getData() {
+        console.log("from getData")
         this.setState({
             geoData
         })
     }
 
     async componentDidMount() {
+        console.log("from componentDidMount")
         this.getData();
-        await this.init();
-
-        let myIcon = L.icon(iconConfig);
-        this.setState({ myIcon })
-        //GeoJSON layer
+        await this.init();        
+        this.addGeoJSONLayer(this.state.geoData) 
+        }     
+     
+     addGeoJSONLayer(geoData){        
         let geojsonLayer = L.geoJson(geoData, {
             pointToLayer: this.pointToLayer,
             filter: this.filterFeatures,
@@ -74,12 +76,13 @@ class Map extends React.Component {
             disableClusteringAtZoom: 18,
             maxClusterRadius: 80,
             spiderfyDistanceMultiplier: 1,
-        });
+        });        
         markers.addLayer(geojsonLayer);
-        this.state.map.addLayer(markers);
-    }
-    
-     init() {
+        this.state.map.addLayer(markers);         
+     }   
+        
+    init() {
+        console.log("initialized")
         if (this.state.map) return;
         let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
             landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
@@ -90,12 +93,11 @@ class Map extends React.Component {
         };
         let map =  L.map('map', { ...config.mapParams, layers: [osmMap] });
         L.control.layers(baseLayers).addTo(map);
-
         this.setState({ map})
     }
 
     pointToLayer(feature, latlng) {
-        return L.marker(latlng, { icon: this.state.myIcon });
+        return L.marker(latlng, { icon: L.icon(iconConfig) });
     }
     
     filterFeatures(feature, _layer) {
@@ -109,14 +111,12 @@ class Map extends React.Component {
                 feature.geometry.coordinates[0]
             ).getCenter();
             feature.geometry.coordinates = [polygonCenter.lat, polygonCenter.lng];
-        }
+        }        
         if (this.state.schoolFilters[this.state.selectedFilter]) {
-            if (feature.properties["operator:type"] === this.state.selectedFilter) {
-                debugger
+            if (feature.properties["operator:type"] === this.state.selectedFilter) {                
                 return true;
-
             }
-        } else return true
+        } else return true       
     }
 
     onEachFeature(feature, layer) {
@@ -137,6 +137,7 @@ class Map extends React.Component {
     }
 
     render() {
+        console.log("from render")
       const style = {
         position: 'absolute',
         zIndex: 9999,
