@@ -1,12 +1,12 @@
 import React from 'react';
-import './App.css';
-import Map from './components/Map'
+// import './App.css';
+import Main from './components/Main'
 
 function App() {
   return (
     <div className="App">
 
-      <Map />
+      <Main />
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import React from 'react';
 import L from 'leaflet';
-import jsonData from '../assets/schooldata.js'
-import osmtogeojson from 'osmtogeojson'
 import _ from 'lodash'
 import markerClusterGroup from 'leaflet.markercluster'
 import '../assets/cluster.css'
+import '../App.css'
+
 
 const config = {
     mapParams: {
@@ -30,60 +30,24 @@ const iconConfig = {
     popupAnchor: [0, -28]
 }
 
-let geoData = osmtogeojson(jsonData)
 class Map extends React.Component {
-    constructor() {
-        super()
+    constructor(props) {
+        super()        
         this.state = {
-            map: null,
-            osmMap: null,
-            landMap: null,
-            geojsonLayer: null,
-            geoData: null,            
-            selectedFilter: null,
-            schoolFilters: { government: false, private: false },
+            // map: null,                        
+            geojsonLayer: null,                                
         }
-
         this.onEachFeature = this.onEachFeature.bind(this)
         this.pointToLayer = this.pointToLayer.bind(this)
-        this.filterFeatures = this.filterFeatures.bind(this)
-        this.onOperatorChange = this.onOperatorChange.bind(this)
-        this.addGeoJSONLayer = this.addGeoJSONLayer.bind(this)
+        this.filterFeatures = this.filterFeatures.bind(this)                        
     }
 
-    getData() {
-        console.log("from getData")
-        this.setState({
-            geoData
-        })
-    }
-
-    async componentDidMount() {
-        console.log("from componentDidMount")
-        this.getData();
-        await this.init();        
-        this.addGeoJSONLayer(this.state.geoData) 
-        }     
-     
-     addGeoJSONLayer(geoData){        
-        let geojsonLayer = L.geoJson(geoData, {
-            pointToLayer: this.pointToLayer,
-            filter: this.filterFeatures,
-            onEachFeature: this.onEachFeature
-        });
-        // Marker Clustering
-        let markers = L.markerClusterGroup({
-            disableClusteringAtZoom: 18,
-            maxClusterRadius: 80,
-            spiderfyDistanceMultiplier: 1,
-        });        
-        markers.addLayer(geojsonLayer);
-        this.state.map.addLayer(markers);         
-     }   
-        
+    componentDidMount() {        
+        this.init();                     
+    }    
+                              
     init() {
-        console.log("initialized")
-        if (this.state.map) return;
+        console.log("initialized")        
         let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
             landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
 
@@ -92,15 +56,31 @@ class Map extends React.Component {
             "Landscape": landMap
         };
         let map =  L.map('map', { ...config.mapParams, layers: [osmMap] });
-        L.control.layers(baseLayers).addTo(map);
-        this.setState({ map})
+        L.control.layers(baseLayers).addTo(map);                
+
+        let geojsonLayer = L.geoJson(this.props.geoData, {
+        pointToLayer: this.pointToLayer,
+        filter: this.filterFeatures,
+        onEachFeature: this.onEachFeature
+        });        
+        this.setState({geojsonLayer})
+        console.log("<<<<<<<<<<<<<<<<", this.state.geojsonLayer)
+
+        // Marker Clustering
+        let markers = L.markerClusterGroup({
+            disableClusteringAtZoom: 18,
+            maxClusterRadius: 80,
+            spiderfyDistanceMultiplier: 1,
+        });        
+        markers.addLayer(geojsonLayer);
+        map.addLayer(markers);                        
     }
 
     pointToLayer(feature, latlng) {
-        return L.marker(latlng, { icon: L.icon(iconConfig) });
+        return L.marker(latlng, { icon: L.icon(iconConfig)});
     }
     
-    filterFeatures(feature, _layer) {
+    filterFeatures(feature, _layer) {        
         let isPolygon =
             feature.geometry &&
             feature.geometry.type &&
@@ -112,12 +92,8 @@ class Map extends React.Component {
             ).getCenter();
             feature.geometry.coordinates = [polygonCenter.lat, polygonCenter.lng];
         }        
-        if (this.state.schoolFilters[this.state.selectedFilter]) {
-            if (feature.properties["operator:type"] === this.state.selectedFilter) {                
-                return true;
-            }
-        } else return true       
-    }
+        return true;        
+    }            
 
     onEachFeature(feature, layer) {
         let popupContent = "";
@@ -129,31 +105,11 @@ class Map extends React.Component {
         layer.bindPopup(popupContent);
     }
 
-    onOperatorChange(event){        
-        console.log(event.target.value)
-        this.setState({
-            selectedFilter: event.target.value
-        })        
-    }
-
     render() {
         console.log("from render")
-      const style = {
-        position: 'absolute',
-        zIndex: 9999,
-        height: 100,
-        width: 60,
-        background: 'black',
-        color: 'white',
-        left: '50%'
-      }
         return (
             <div id="map">
-              <div style={style}>
-                <input type="radio" name="school" value="private" onChange={this.onOperatorChange} />Private
-                <input type="radio" name="school" value="government" onChange={this.onOperatorChange} />Government
-                <input type="radio" name="school" value="all" onChange={this.onOperatorChange} /> All
-              </div>
+                
             </div>
         )
     }
