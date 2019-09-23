@@ -8,24 +8,27 @@ import Filter from './Filter'
 let geoData = osmtogeojson(jsonData)
 
 let geoData2= geoData.features.filter(a=>a.properties["isced:level"]==="primary")
-debugger
-
-
 
 class Main extends React.Component{
 constructor(props) {
-        super()        
+        super()   
+        this.state = {
+        	geoData: geoData
+        }     
 			this.onHandleChange = this.onHandleChange.bind(this)             
     }
 
-onHandleChange() {
-	console.log("Changed")
+onHandleChange(event) {
+	console.log(event.target.value)	
+	if (event.target.value === "private")		
 }
-  render(){  	
+
+render(){  	
   	return (
     <div className="Main">
-      <Map geoData={geoData.features}/>
+      
       <Filter onChange={this.onHandleChange}/>
+      <Map geoData={this.state.geoData}/>
       
     </div>
   	);	
