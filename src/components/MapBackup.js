@@ -35,56 +35,35 @@ class Map extends React.Component {
         super()        
         this.state = {
             map: null,                        
-            geojsonLayer: null,            
-            markers: null                                
+            geojsonLayer: null,
+            geoData: props.geoData                                
         }
         this.onEachFeature = this.onEachFeature.bind(this)
         this.pointToLayer = this.pointToLayer.bind(this)
         this.filterFeatures = this.filterFeatures.bind(this)  
-        this.filterGeoJSONLayer = this.filterGeoJSONLayer.bind(this)     
-        this.addGeoJSONLayer = this.addGeoJSONLayer.bind(this)                 
+        this.filterGeoJSONLayer = this.filterGeoJSONLayer.bind(this)                      
     }
 
     componentDidMount() {        
         this.init();                     
     }
 
-    componentDidUpdate(prevProps, prevState) {    
-        if (this.props.geoData && !this.state.geojsonLayer) {                  
-            this.addGeoJSONLayer(this.props.geoData);
-        }
-
-        if (prevProps.geoData !== this.props.geoData) {                       
-            this.filterGeoJSONLayer();
+    componentDidUpdate(prevProps, prevState) {            
+        if (prevProps.geoData !== this.props.geoData) { 
+          
+        console.log("COmponent Did Update")       
+          this.filterGeoJSONLayer();
       }              
     }
   
-    filterGeoJSONLayer() {                  
-        this.state.markers.clearLayers()
-        
-        console.log("Add this>>>>>>>>>>>>", this.props.geoData) 
-         this.addGeoJSONLayer(this.props.geoData)  
-    }
-
-    addGeoJSONLayer(geojson)  {
-        let geojsonLayer = L.geoJson(this.props.geoData, {
-        pointToLayer: this.pointToLayer,
-        filter: this.filterFeatures,
-        onEachFeature: this.onEachFeature
-        });                    
-    
-        // Marker Clustering
-        let markers = L.markerClusterGroup({
-        disableClusteringAtZoom: 18,
-        maxClusterRadius: 80,
-        spiderfyDistanceMultiplier: 1,
-        });        
-        markers.addLayer(geojsonLayer);
-        this.state.map.addLayer(markers);                
-        this.setState({ geojsonLayer, markers })        
+    filterGeoJSONLayer() {  
+        console.log(this.state.geojsonLayer, "clear")              
+        this.state.geojsonLayer.clearLayers();       
+        this.state.geojsonLayer.addData(this.props.geoData);           
     }
 
     init() {
+        console.log("initialized")        
         let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
             landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
 
@@ -93,8 +72,24 @@ class Map extends React.Component {
             "Landscape": landMap
         };
         let map =  L.map('map', { ...config.mapParams, layers: [osmMap] });
-        L.control.layers(baseLayers).addTo(map);           
-        this.setState({ map });
+        L.control.layers(baseLayers).addTo(map);                
+        
+        let geojsonLayer = L.geoJson(this.state.geoData, {
+        pointToLayer: this.pointToLayer,
+        filter: this.filterFeatures,
+        onEachFeature: this.onEachFeature
+        });                
+        
+
+        // Marker Clustering
+        let markers = L.markerClusterGroup({
+            disableClusteringAtZoom: 18,
+            maxClusterRadius: 80,
+            spiderfyDistanceMultiplier: 1,
+        });        
+        markers.addLayer(geojsonLayer);
+        map.addLayer(markers);        
+        this.setState({ geojsonLayer })
     }
 
     pointToLayer(feature, latlng) {

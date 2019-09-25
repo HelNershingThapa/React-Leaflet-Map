@@ -11,12 +11,15 @@ const style = {
       }
 
 class Filter extends Component{
+	constructor(props) {
+        super()           
+    }
 	render(){
 		return(					
 			<div style={style}>				
-            <input type="radio" name="school" value="private" onChange={this.props.onChange}/>Private
-            <input type="radio" name="school" value="government" onChange={this.props.onChange}/>Government
-            <input type="radio" name="school" value="all" onChange={this.props.onChange}/> All
+            <input type="radio" name="school" value="private" onChange={this.props.onHandleChange}/>Private
+            <input type="radio" name="school" value="government" onChange={this.props.onHandleChange}/>Government
+            <input type="radio" name="school" value="all" onChange={this.props.onHandleChange}/> All
           	</div>
 
 		)		
