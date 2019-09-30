@@ -1,7 +1,7 @@
 import React from 'react';
 import L from 'leaflet';
 import _ from 'lodash'
-import markerClusterGroup from 'leaflet.markercluster'
+import 'leaflet.markercluster'
 import '../assets/cluster.css'
 import '../App.css'
 
@@ -36,7 +36,7 @@ class Map extends React.Component {
         this.state = {
             map: null,                        
             geojsonLayer: null,            
-            markers: null                                
+            markers: null,            
         }
         this.onEachFeature = this.onEachFeature.bind(this)
         this.pointToLayer = this.pointToLayer.bind(this)
@@ -53,31 +53,28 @@ class Map extends React.Component {
         if (this.props.geoData && !this.state.geojsonLayer) {                  
             this.addGeoJSONLayer(this.props.geoData);
         }
-
         if (prevProps.geoData !== this.props.geoData) {                       
             this.filterGeoJSONLayer();
-      }              
+        }              
     }
   
     filterGeoJSONLayer() {                  
-        this.state.markers.clearLayers()
-        
-        console.log("Add this>>>>>>>>>>>>", this.props.geoData) 
-         this.addGeoJSONLayer(this.props.geoData)  
+        this.state.markers.clearLayers()                
+        this.addGeoJSONLayer(this.props.geoData)  
     }
 
-    addGeoJSONLayer(geojson)  {
+    addGeoJSONLayer(geojson) {
         let geojsonLayer = L.geoJson(this.props.geoData, {
-        pointToLayer: this.pointToLayer,
-        filter: this.filterFeatures,
-        onEachFeature: this.onEachFeature
+                pointToLayer: this.pointToLayer,
+                filter: this.filterFeatures,
+                onEachFeature: this.onEachFeature
         });                    
     
         // Marker Clustering
         let markers = L.markerClusterGroup({
-        disableClusteringAtZoom: 18,
-        maxClusterRadius: 80,
-        spiderfyDistanceMultiplier: 1,
+                disableClusteringAtZoom: 18,
+                maxClusterRadius: 80,
+                spiderfyDistanceMultiplier: 1,
         });        
         markers.addLayer(geojsonLayer);
         this.state.map.addLayer(markers);                
@@ -87,7 +84,6 @@ class Map extends React.Component {
     init() {
         let osmMap = L.tileLayer(config.tileLayer.osmUrl, { attribution: config.tileLayer.osmAttrib }),
             landMap = L.tileLayer(config.tileLayer.landUrl, { attribution: config.tileLayer.thunAttrib });
-
         let baseLayers = {
             "Carto Dark": osmMap,
             "Landscape": landMap
@@ -134,6 +130,5 @@ class Map extends React.Component {
         )
     }
 }
-
 
 export default Map;

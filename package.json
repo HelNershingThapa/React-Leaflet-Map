@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "c3": "^0.7.9",
     "leaflet": "^1.5.1",
     "leaflet.markercluster": "^1.4.1",
     "loadash": "^1.0.0",
@@ -12,10 +13,10 @@
     "react-scripts": "3.1.1"
   },
   "scripts": {
-    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "start": "PORT=3006 react-scripts start"
   },
   "eslintConfig": {
     "extends": "react-app"
